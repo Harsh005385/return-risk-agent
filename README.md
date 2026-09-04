@@ -10,13 +10,11 @@ Razorpay AI Buildathon · Track 02: AI Risk Manager
 
 ---
 
-## For everyone (non-technical)
-
-### Problem
+## Problem
 
 Return abuse (wardrobing, serial returners, linked accounts) costs merchants money. A single opaque risk score is hard to trust. Analysts need clear reasons and an audit trail before they hold or approve a refund.
 
-### What this project does
+## What this project does
 
 1. Takes a return / refund case (from the demo dataset or manual entry).
 2. Investigates with multiple checks: order context, customer history, ML risk score, top drivers, behaviour patterns, linked accounts.
@@ -25,22 +23,20 @@ Return abuse (wardrobing, serial returners, linked accounts) costs merchants mon
 
 A human still makes the final call. The system only advises.
 
-### How to try the live demo
+## How to try the live demo
 
 1. Open [https://return-risk-agent.onrender.com](https://return-risk-agent.onrender.com) (wait if the service is waking up).
 2. Use Quick presets: **Safe**, **Risky**, **Ambiguous**, **Syndicate**.
 3. Or use **Dataset Lookup** / **Manual Entry**, then score a case.
 4. Open **Audit trail** and click **Verify Integrity**.
 
-### Screenshots
+## Screenshots
 
-Live GUI captures live in [`docs/screenshots/`](docs/screenshots/).
+Live GUI captures in [`docs/screenshots/`](docs/screenshots/).
 
 ---
 
-## For engineers (technical)
-
-### Stack
+## Stack
 
 | Layer | Choice |
 |-------|--------|
@@ -55,7 +51,7 @@ Live GUI captures live in [`docs/screenshots/`](docs/screenshots/).
 | Optional payments touchpoint | Razorpay test-mode order create |
 | Hosting | Render Web Service + gunicorn (`dashboard.app:server`) |
 
-### Architecture
+## Architecture
 
 ```
 Case
@@ -67,7 +63,7 @@ Case
 
 Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · diagram: [`docs/architecture.png`](docs/architecture.png)
 
-### Design choices
+## Design choices
 
 | Topic | Choice | Why |
 |-------|--------|-----|
@@ -77,14 +73,14 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · diagram: [`docs/archi
 | Linked accounts | Full fingerprint + behaviour | Avoid false rings from coarse attributes |
 | Metrics | Disclosed DEMO DATA | Synthetic separability is not a production claim |
 
-### Data and model
+## Data and model
 
 - Training CSVs: `data/raw/`
 - Chronological split (not random)
 - Model card: [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)
 - Artifacts (`.joblib`, processed tables, audit DB) are **not** committed; train at build/run time
 
-### Project layout
+## Project layout
 
 ```
 src/           agent, policy, models, audit, api, features
@@ -95,7 +91,7 @@ docs/          architecture, model card, screenshots
 scripts/       train smoke, ablation, architecture diagram
 ```
 
-### Quick start (local)
+## Quick start (local)
 
 ```bash
 python -m venv .venv
@@ -118,14 +114,14 @@ Copy `.env.example` to `.env` for optional:
 
 Without an LLM key, Thorough review uses the rules-based planner (same tools + same policy).
 
-### Tests
+## Tests
 
 ```bash
 set PYTHONPATH=.
 pytest -q
 ```
 
-### Deploy notes (Render)
+## Deploy notes (Render)
 
 - Start: `PYTHONPATH=. gunicorn dashboard.app:server --bind 0.0.0.0:$PORT`
 - Build should train the model (artifacts are gitignored)
