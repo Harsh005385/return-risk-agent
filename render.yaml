@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: return-risk-agent
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && pip uninstall -y nvidia-nccl-cu12 nvidia-nccl-cu13 || true && PYTHONPATH=. python -m src.models.train_ensemble --sample-n 10000
+    startCommand: PYTHONPATH=. gunicorn dashboard.app:server --bind 0.0.0.0:$PORT --timeout 120 --workers 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.10"
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false

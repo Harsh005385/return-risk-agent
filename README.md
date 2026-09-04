@@ -24,6 +24,7 @@ python dashboard/app.py
 
 - Dashboard: http://127.0.0.1:8050
 - Optional API: `uvicorn src.api.main:app --reload --port 8000` then http://127.0.0.1:8000/docs
+- Live demo (Render free tier may sleep when idle; first open can take ~1 minute): https://return-risk-agent.onrender.com
 
 Copy `.env.example` to `.env` for optional `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `RAZORPAY_KEY_ID`, and `RAZORPAY_KEY_SECRET`. Without an LLM key, Thorough review uses the rules-based planner.
 

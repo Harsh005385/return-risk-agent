@@ -724,7 +724,7 @@ def _build_layout() -> html.Div:
                             dbc.Col([
                                 html.Label("Customer", className="fw-semibold small"),
                                 dcc.Dropdown(
-                                    id="live-customer", options=customer_options(),
+                                    id="live-customer", options=customer_options(limit=150),
                                     searchable=True, clearable=True,
                                     placeholder="Search customer from dataset…", className="mb-1",
                                 ),
@@ -733,7 +733,7 @@ def _build_layout() -> html.Div:
                             dbc.Col([
                                 html.Label("Order", className="fw-semibold small"),
                                 dcc.Dropdown(
-                                    id="live-order", options=order_options(limit=2000),
+                                    id="live-order", options=[],
                                     searchable=True, clearable=True,
                                     placeholder="Search order from dataset…", className="mb-1",
                                 ),
@@ -930,16 +930,33 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     suppress_callback_exceptions=True,
     title="Return Risk Agent",
+    assets_folder=str(Path(__file__).resolve().parent / "assets"),
 )
 server = app.server
-app.layout = _build_layout
 
-# Gunicorn / production entry: warm once on import (main() also warms for local runs).
-init_db()
-try:
-    warm_runtime()
-except Exception as exc:  # noqa: BLE001
-    print(f"Warmup deferred: {exc}", flush=True)
+# Keep import light for gunicorn/Render free tier. Warm on first layout build.
+_WARMED = False
+
+
+def _ensure_warm() -> None:
+    global _WARMED
+    if _WARMED:
+        return
+    init_db()
+    try:
+        warm_runtime()
+        print("Warmup complete.", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Warmup deferred: {exc}", flush=True)
+    _WARMED = True
+
+
+def _layout():
+    _ensure_warm()
+    return _build_layout()
+
+
+app.layout = _layout
 
 
 @callback(
@@ -956,7 +973,7 @@ def on_customer_selected(customer_id, current_order):
         order_ids = {o["value"] for o in orders}
         order_val = current_order if current_order in order_ids else None
         return orders, order_val, _customer_detail_ui(detail)
-    return order_options(limit=2000), no_update, _customer_detail_ui(None)
+    return [], no_update, _customer_detail_ui(None)
 
 
 @callback(
