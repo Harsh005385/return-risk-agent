@@ -1,0 +1,23 @@
+.venv/
+venv/
+.venv_ci/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.env
+data/processed/*
+!data/processed/.gitkeep
+src/models/*.joblib
+src/models/*.pkl
+*.log
+.DS_Store
+
+# Keep local-only / not for public GitHub
+speech.txt
+DETAILED_PROJECT_DESCRIPTION.md
+docs/PROJECT_REFERENCE.txt
+docs/PROJECT_REFERENCE_v2.txt
+scripts/build_onepager_v3.py
+*.docx
+*.pdf

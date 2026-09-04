@@ -1,0 +1,27 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - LLM_API_KEY=${LLM_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+      - ./src/models:/app/src/models
+    command: >
+      bash -c "python -m src.models.train_ensemble --sample-n 15000 &&
+               uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+
+  dashboard:
+    build: .
+    ports:
+      - "8050:8050"
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - api
+    volumes:
+      - ./data:/app/data
+      - ./src/models:/app/src/models
+    command: python dashboard/app.py
