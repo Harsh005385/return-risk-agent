@@ -53,15 +53,108 @@ Live GUI captures in [`docs/screenshots/`](docs/screenshots/).
 
 ## Architecture
 
-```
-Case
-  -> Agent tools (history, score, SHAP, pattern, order, linked accounts)
-  -> Policy engine -> ALLOW | MONITOR | REVIEW | HOLD
-  -> Hash-chained audit DB
-  -> Dash console / FastAPI
+End-to-end agentic flow: input, agent loop, evidence tools, model, policy, audit, and delivery surfaces.
+
+```mermaid
+flowchart TB
+    subgraph IN["1. Case input"]
+        direction LR
+        A1[Dataset Lookup]
+        A2[Manual Entry]
+        A3[Scenario presets<br/>Safe · Risky · Ambiguous · Syndicate]
+        A4[REST POST /score]
+    end
+
+    subgraph AGENT["2. Agent orchestrator (src/agent/orchestrator.py)"]
+        direction TB
+        B0{Mode}
+        B1[Quick review<br/>all tools in parallel]
+        B2[Thorough review<br/>sequential loop, max 4 steps]
+        B3{Planner}
+        B4[LLM planner<br/>OpenAI-compatible, gpt-4o-mini]
+        B5[Rules-based planner<br/>fallback + cooldown on failure]
+        B0 -->|fast| B1
+        B0 -->|deep| B2
+        B2 --> B3
+        B3 -->|LLM_API_KEY set| B4
+        B3 -->|no key / 429 / error| B5
+    end
+
+    subgraph TOOLS["3. Evidence tools (src/agent/tools.py)"]
+        direction LR
+        T1[get_order_context]
+        T2[get_customer_history]
+        T3[get_ensemble_risk_score]
+        T4[get_shap_explanation]
+        T5[check_pattern]
+        T6[check_shared_signals<br/>linked accounts]
+    end
+
+    subgraph MODEL["4. Model layer (src/models, src/explain)"]
+        direction LR
+        M1[Soft-voting ensemble<br/>RandomForest + XGBoost + GradientBoosting]
+        M2[SHAP TreeExplainer<br/>top drivers]
+        M3[NetworkX shared-signal graph<br/>device + payment + country]
+    end
+
+    subgraph POLICY["5. Policy engine (src/policy/policy_engine.py)"]
+        P1[Deterministic rules<br/>score + flags + linked count + confidence gate]
+        P2([ALLOW])
+        P3([MONITOR])
+        P4([REVIEW])
+        P5([HOLD])
+        P1 --> P2
+        P1 --> P3
+        P1 --> P4
+        P1 --> P5
+    end
+
+    subgraph AUDIT["6. Audit (src/audit/db.py)"]
+        direction LR
+        L1[(SQLite events<br/>reasoning · tool_call · verdict)]
+        L2[SHA-256 chain<br/>prev_hash / record_hash]
+        L3[Verify Integrity]
+        L1 --> L2 --> L3
+    end
+
+    subgraph OUT["7. Delivery"]
+        direction LR
+        O1[Dash Risk console<br/>dashboard/app.py]
+        O2[FastAPI<br/>/score · /audit/verify · /scenarios]
+        O3[Razorpay test-mode order<br/>optional]
+        O4[Human reviewer<br/>final decision on REVIEW / HOLD]
+    end
+
+    IN --> AGENT
+    B1 --> TOOLS
+    B4 --> TOOLS
+    B5 --> TOOLS
+    T3 --> M1
+    T4 --> M2
+    T6 --> M3
+    TOOLS --> POLICY
+    AGENT -.every step.-> AUDIT
+    TOOLS -.every call.-> AUDIT
+    POLICY -.verdict.-> AUDIT
+    POLICY --> OUT
+    AUDIT --> O1
+    AUDIT --> O2
+    O1 --> O4
+    O2 --> O4
 ```
 
-Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · diagram: [`docs/architecture.png`](docs/architecture.png)
+**Who decides what**
+
+| Layer | Owns | Never does |
+|-------|------|------------|
+| Agent orchestrator | Which tool to call next, in what order | Set the final action |
+| LLM planner (optional) | Suggest next tool in Thorough mode | Emit ALLOW / HOLD |
+| Evidence tools | Gather facts, score, explain, link accounts | Decide |
+| Policy engine | Map evidence to one action | Call an LLM |
+| Audit chain | Record and verify every step | Change past records silently |
+| Human reviewer | Irreversible refund / account decision | Get auto-punished by the system |
+
+More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · static diagram: [`docs/architecture.png`](docs/architecture.png)
 
 ## Design choices
 
