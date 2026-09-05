@@ -47,7 +47,7 @@ Live GUI captures in [`docs/screenshots/`](docs/screenshots/).
 | Explainability | SHAP (TreeExplainer on RF member) |
 | Policy | Deterministic rules in `src/policy/policy_engine.py` (no LLM) |
 | Audit | SQLite + SHA-256 `prev_hash` / `record_hash` chain |
-| Optional LLM | OpenAI-compatible chat API via env vars (planner only) |
+| Optional LLM | OpenAI-compatible chat API via env vars (planner only; default `gpt-4o-mini`) |
 | Optional payments touchpoint | Razorpay test-mode order create |
 | Hosting | Render Web Service + gunicorn (`dashboard.app:server`) |
 
@@ -71,14 +71,19 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · diagram: [`docs/archi
 | Train/test split | Chronological | Avoid future leakage on time-ordered returns |
 | Quick vs Thorough | Parallel vs sequential (max 4 steps) | Desk speed vs analyst depth |
 | Linked accounts | Full fingerprint + behaviour | Avoid false rings from coarse attributes |
-| Metrics | Disclosed DEMO DATA | Synthetic separability is not a production claim |
+| Metrics | Disclosed DEMO DATA | Near-perfect scores are a red flag on synthetic data, not a production claim |
 
-## Data and model
+## Data honesty and production awareness
 
-- Training CSVs: `data/raw/`
-- Chronological split (not random)
-- Model card: [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)
-- Artifacts (`.joblib`, processed tables, audit DB) are **not** committed; train at build/run time
+This buildathon demo uses **public synthetic** return-abuse datasets. That is intentional for a time-boxed submission: labeled merchant traffic is hard to obtain under NDA.
+
+**What that means:**
+
+- Ideal held-out precision/recall (near 1.0) is a **red flag**, not a win. The set is highly separable on behavioral aggregates (e.g. return rate). We disclose this with DEMO DATA badges, the model card, and a feature-ablation stress test.
+- Real industry data is messy, incomplete, delayed, and drifts. Scores would be lower and less stable. A production path needs merchant labels, monitoring, recalibration, and human review SLAs.
+- Leakage-prone proxy flags are excluded from the ML feature matrix; chronological split is used instead of random split.
+
+See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md). Artifacts (`.joblib`, processed tables, audit DB) are not committed; train at build/run time.
 
 ## Project layout
 
